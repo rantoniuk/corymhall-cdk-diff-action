@@ -1,7 +1,7 @@
 import * as fs from 'fs';
 import path from 'path';
 import { CloudFormationClient, GetTemplateCommand } from '@aws-sdk/client-cloudformation';
-import { STSClient, GetCallerIdentityCommand } from '@aws-sdk/client-sts';
+import { GetCallerIdentityCommand, STSClient } from '@aws-sdk/client-sts';
 import { mockClient } from 'aws-sdk-client-mock';
 import { StackInfo } from '../src/assembly';
 import { Comments } from '../src/comment';

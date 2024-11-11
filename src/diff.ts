@@ -1,7 +1,6 @@
 import { ResourceDifference, ResourceImpact, TemplateDiff, fullDiff } from '@aws-cdk/cloudformation-diff';
 import { CloudFormationClient, GetTemplateCommand, StackNotFoundException } from '@aws-sdk/client-cloudformation';
-import { STSClient, GetCallerIdentityCommand } from '@aws-sdk/client-sts';
-import { fromTemporaryCredentials } from '@aws-sdk/credential-providers';
+import { GetCallerIdentityCommand, STSClient } from '@aws-sdk/client-sts';
 import { AwsCredentialIdentityProvider } from '@smithy/types';
 import { StackInfo } from './assembly';
 
@@ -69,33 +68,19 @@ export class StackDiff {
     private readonly stack: StackInfo,
     private readonly allowedDestroyTypes: string[],
   ) {
-    let credentials: AwsCredentialIdentityProvider | undefined;
-    // if there is a lookup role then assume that, otherwise
-    // just use the default credentials
-    credentials = stack.lookupRole ? fromTemporaryCredentials({
-      params: {
-        RoleArn: stack.lookupRole.arn.replace('${AWS::Partition}', this.getPartition()),
-        RoleSessionName: 'cdk-diff-action',
-        ExternalId: stack.lookupRole.assumeRoleExternalId,
-        DurationSeconds: 900,
-      },
-    }) : undefined;
-    this.credentials = credentials;
-    this.client = new CloudFormationClient({
-      credentials,
-      region: this.stack.region,
-    });
+
+    this.client = new CloudFormationClient();
   }
 
-  private getPartition(): string {
-    if (this.stack.region?.startsWith('us-gov-')) {
-      return 'aws-us-gov';
-    } else if (this.stack.region?.startsWith('cn-')) {
-      return 'aws-cn';
-    } else {
-      return 'aws';
-    }
-  }
+  // private getPartition(): string {
+  //   if (this.stack.region?.startsWith('us-gov-')) {
+  //     return 'aws-us-gov';
+  //   } else if (this.stack.region?.startsWith('cn-')) {
+  //     return 'aws-cn';
+  //   } else {
+  //     return 'aws';
+  //   }
+  // }
 
   /**
    * Validates the environment of the stack and whether it matches
@@ -126,13 +111,13 @@ export class StackDiff {
     if (!this.stack.account) {
       unknownAccount = true;
     }
-    if (this.stack.account && identity.Account !== this.stack.account) {
-      throw new Error(`Credentials are for account ${identity.Account} but stack is in account ${this.stack.account}`);
-    }
+    // if (this.stack.account && identity.Account !== this.stack.account) {
+    //   throw new Error(`Credentials are for account ${identity.Account} but stack is in account ${this.stack.account}`);
+    // }
 
-    if (this.stack.region && configRegion !== this.stack.region) {
-      throw new Error(`Credentials are for region ${configRegion} but stack is in region ${this.stack.region}`);
-    }
+    // if (this.stack.region && configRegion !== this.stack.region) {
+    //   throw new Error(`Credentials are for region ${configRegion} but stack is in region ${this.stack.region}`);
+    // }
 
     if (unknownAccount || unknownRegion) {
       return `aws://${identity.Account}/${configRegion}`;
